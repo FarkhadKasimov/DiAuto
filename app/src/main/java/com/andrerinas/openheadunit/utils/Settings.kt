@@ -112,7 +112,7 @@ class Settings(private val context: Context) {
         }
 
     var bydNavigationEnabled: Boolean
-        get() = prefs.getBoolean("byd-navigation-enabled", false)
+        get() = prefs.getBoolean("byd-navigation-enabled", isBydPlatform())
         set(value) { prefs.edit().putBoolean("byd-navigation-enabled", value).apply() }
 
     var showNavigationNotifications: Boolean
@@ -123,7 +123,7 @@ class Settings(private val context: Context) {
 
     /** Mirror phone now-playing (title, artist, duration, art) in the system media session. */
     var syncMediaSessionWithAaMetadata: Boolean
-        get() = prefs.getBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, false)
+        get() = prefs.getBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, true)
         set(value) {
             prefs.edit().putBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, value).apply()
         }
@@ -412,8 +412,19 @@ class Settings(private val context: Context) {
      * the session. See [com.andrerinas.openheadunit.decoder.DecoderConfigLadder].
      */
     var debugVideoLowLatency: Boolean
-        get() = prefs.getBoolean("debug-video-low-latency", false)
+        get() = prefs.getBoolean("debug-video-low-latency", isDefaultLowLatencyPreferred())
         set(value) { prefs.edit().putBoolean("debug-video-low-latency", value).apply() }
+
+    fun isBydPlatform(): Boolean = Companion.isBydPlatform()
+
+    private fun isDefaultLowLatencyPreferred(): Boolean {
+        val board = Build.BOARD.orEmpty()
+        val hardware = Build.HARDWARE.orEmpty()
+        return isBydPlatform() ||
+            board.contains("qcom", ignoreCase = true) ||
+            hardware.contains("qcom", ignoreCase = true) ||
+            Build.VERSION.SDK_INT >= 30
+    }
 
     /** One in this many of the targeted messages is faulted. See [debugVideoFaultInjection]. */
     var debugVideoFaultRate: Int
@@ -606,7 +617,7 @@ class Settings(private val context: Context) {
 
     /** BYD manages A2DP outside Android's normal Bluetooth profile reporting. */
     var musicViaBluetooth: Boolean
-        get() = prefs.getBoolean("music-via-bluetooth", Build.MODEL == "DiLink5.1")
+        get() = prefs.getBoolean("music-via-bluetooth", isBydPlatform())
         set(value) { prefs.edit().putBoolean("music-via-bluetooth", value).apply() }
 
     val effectivePlaybackFocusMode: PlaybackFocusPolicy.Mode
@@ -678,7 +689,7 @@ class Settings(private val context: Context) {
 
     // Attach dummy Equalizer effect to AudioTrack/AudioMixer session to force HW DSP hardware routing
     var attachHwDspEqualizer: Boolean
-        get() = prefs.getBoolean("attach_hw_dsp_equalizer", false)
+        get() = prefs.getBoolean("attach_hw_dsp_equalizer", isBydPlatform())
         set(value) { prefs.edit().putBoolean("attach_hw_dsp_equalizer", value).apply() }
 
     var micNoiseSuppressor: Boolean
@@ -1000,6 +1011,18 @@ class Settings(private val context: Context) {
 
     companion object {
         const val PREFS_NAME = "settings"
+
+        fun isBydPlatform(): Boolean {
+            val model = Build.MODEL.orEmpty()
+            val brand = Build.BRAND.orEmpty()
+            val mfg = Build.MANUFACTURER.orEmpty()
+            val fp = Build.FINGERPRINT.orEmpty()
+            return model.contains("DiLink", ignoreCase = true) ||
+                model.contains("BYD", ignoreCase = true) ||
+                brand.equals("BYD", ignoreCase = true) ||
+                mfg.equals("BYD", ignoreCase = true) ||
+                fp.startsWith("BYD-AUTO")
+        }
 
         const val CONNECTION_TYPE_WIFI = "wifi"
         const val CONNECTION_TYPE_USB = "usb"

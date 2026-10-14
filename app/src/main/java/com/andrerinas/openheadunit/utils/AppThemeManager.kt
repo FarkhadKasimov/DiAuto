@@ -145,15 +145,14 @@ class AppThemeManager(
 
         if (theme == Settings.AppTheme.CAR_SIGNAL) {
             if (!isCarSignalObserverRegistered) {
-                context.contentResolver.registerContentObserver(
-                    SystemSettings.System.getUriFor("car_mode"),
-                    false, carSignalObserver
-                )
+                VehicleIlluminationResolver.observeUris().forEach { uri ->
+                    runCatching { context.contentResolver.registerContentObserver(uri, false, carSignalObserver) }
+                }
                 isCarSignalObserverRegistered = true
             }
         } else {
             if (isCarSignalObserverRegistered) {
-                context.contentResolver.unregisterContentObserver(carSignalObserver)
+                runCatching { context.contentResolver.unregisterContentObserver(carSignalObserver) }
                 isCarSignalObserverRegistered = false
             }
         }
@@ -204,14 +203,12 @@ class AppThemeManager(
                 }
             }
             Settings.AppTheme.CAR_SIGNAL -> {
-                val carMode = try {
-                    SystemSettings.System.getInt(context.contentResolver, "car_mode")
-                } catch (_: Exception) { -1 }
-                if (carMode >= 0) {
-                    isNight = carMode != 0
-                    AppLog.d("AppThemeManager: CAR_SIGNAL car_mode=$carMode isNight=$isNight")
+                val resolved = VehicleIlluminationResolver.resolve(context)
+                if (resolved != null) {
+                    isNight = resolved
+                    AppLog.d("AppThemeManager: CAR_SIGNAL resolved=$isNight")
                 } else {
-                    AppLog.w("AppThemeManager: CAR_SIGNAL key 'car_mode' not present; treating as day")
+                    AppLog.w("AppThemeManager: CAR_SIGNAL no vehicle illumination key present; treating as day")
                     isNight = lastEmittedNight ?: false
                 }
             }

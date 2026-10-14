@@ -6,6 +6,8 @@ import org.junit.Test
 class ProjectionRendererPolicyTest {
     @Test fun `verified DiLink uses direct surface output on first install`() {
         assertEquals(0, ProjectionRendererPolicy.resolve(null, "DiLink5.1"))
+        assertEquals(0, ProjectionRendererPolicy.resolve(null, "DiLink 5.1"))
+        assertEquals(0, ProjectionRendererPolicy.resolve(null, "DiLink-5.1"))
     }
     @Test fun `unknown devices retain compatible texture default`() {
         assertEquals(1, ProjectionRendererPolicy.resolve(null, "Other"))

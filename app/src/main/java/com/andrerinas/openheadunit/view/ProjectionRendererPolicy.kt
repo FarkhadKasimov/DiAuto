@@ -4,6 +4,7 @@ package com.andrerinas.openheadunit.view
 object ProjectionRendererPolicy {
     fun resolve(storedMode: Int?, model: String): Int {
         if (storedMode in 0..2) return storedMode!!
-        return if (model.equals("DiLink5.1", ignoreCase = true)) 0 else 1
+        val normalized = model.replace(" ", "").replace("-", "").replace("_", "")
+        return if (normalized.equals("DiLink5.1", ignoreCase = true)) 0 else 1
     }
 }

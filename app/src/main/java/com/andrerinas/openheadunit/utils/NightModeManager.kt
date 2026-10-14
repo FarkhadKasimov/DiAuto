@@ -163,19 +163,17 @@ class NightModeManager(
             }
         }
 
-        // 3. Car Headlight Signal Observer (Settings.System.car_mode: 0 = day, 1 = night)
+        // 3. Car Headlight Signal Observer
         if (settings.nightMode == Settings.NightMode.CAR_SIGNAL) {
             if (!isCarSignalObserverRegistered) {
-                context.contentResolver.registerContentObserver(
-                    SystemSettings.System.getUriFor("car_mode"),
-                    false,
-                    carSignalObserver
-                )
+                VehicleIlluminationResolver.observeUris().forEach { uri ->
+                    runCatching { context.contentResolver.registerContentObserver(uri, false, carSignalObserver) }
+                }
                 isCarSignalObserverRegistered = true
             }
         } else {
             if (isCarSignalObserverRegistered) {
-                context.contentResolver.unregisterContentObserver(carSignalObserver)
+                runCatching { context.contentResolver.unregisterContentObserver(carSignalObserver) }
                 isCarSignalObserverRegistered = false
             }
         }
@@ -225,16 +223,12 @@ class NightModeManager(
                 }
             }
             Settings.NightMode.CAR_SIGNAL -> {
-                // Many Chinese aftermarket head units (e.g. OLEDPRO) expose the car's
-                // ILL+ headlight signal as Settings.System.car_mode (0 = day, 1 = night).
-                val carMode = try {
-                    SystemSettings.System.getInt(context.contentResolver, "car_mode")
-                } catch (_: Exception) { -1 }
-                if (carMode >= 0) {
-                    isNight = carMode != 0
-                    AppLog.d("NightModeManager: CAR_SIGNAL car_mode=$carMode isNight=$isNight")
+                val resolved = VehicleIlluminationResolver.resolve(context)
+                if (resolved != null) {
+                    isNight = resolved
+                    AppLog.d("NightModeManager: CAR_SIGNAL resolved=$isNight")
                 } else {
-                    AppLog.w("NightModeManager: CAR_SIGNAL key 'car_mode' not present; keeping previous state")
+                    AppLog.w("NightModeManager: CAR_SIGNAL no vehicle illumination key present; keeping previous state")
                     isNight = lastEmittedValue ?: false
                 }
             }

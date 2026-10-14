@@ -18,6 +18,7 @@ permissions:
 jobs:
   build:
     name: Build (github debug)
+    needs: unit-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,7 +60,7 @@ jobs:
       # VpnControl.kt lives solely in app/src/github. When that source-set
       # split is fixed, add an assemblePlaystoreDebug build here.
       - name: Assemble github debug APK
-        run: ./gradlew :app:testGithubDebugUnitTest :app:assembleGithubDebug :app:assembleGithubRelease --stacktrace
+        run: ./gradlew :app:assembleGithubDebug :app:assembleGithubRelease --stacktrace
 
       - name: Upload debug APK
         if: always()

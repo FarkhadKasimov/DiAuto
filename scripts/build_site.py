@@ -5,7 +5,7 @@ import json
 from html import escape as e
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'site'
-data = json.loads((SITE / 'content.json').read_text())
+data = json.loads((SITE / 'content.json').read_text(encoding='utf-8'))
 BASE = 'https://shihabal3amri.github.io/DiAuto/'
 REPO = 'https://github.com/shihabal3amri/DiAuto'
 RELEASE = REPO + '/releases/tag/v0.3.11'
@@ -32,5 +32,5 @@ for lang, d in data.items():
 <section class="card updates"><div><h2>{e(d['follow'])}</h2><p>{e(d['followText'])}</p></div><a class="button secondary" href="https://t.me/byd_localized">{e(d['telegram'])} ↗</a></section>
 <section class="signing"><h2>{e(d['update'])}</h2><p>{e(d['updateText'])}</p></section>
 <footer><nav><a href="{REPO}">{e(d['source'])}</a><a href="{RELEASE}">{e(d['notes'])}</a><a href="{REPO}/issues">{e(d['feedback'])}</a></nav><p>{e(d['footer'])}</p></footer>
-</main></body></html>''')
+</main></body></html>''', encoding='utf-8')
 print('Generated', len(data), 'language pages')

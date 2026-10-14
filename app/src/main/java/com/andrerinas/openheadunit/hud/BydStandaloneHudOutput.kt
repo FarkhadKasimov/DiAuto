@@ -49,13 +49,18 @@ internal class BydStandaloneHudOutput private constructor(context: Context) {
             if (Build.VERSION.SDK_INT < 28 || context.packageName !in setOf(
                     "com.andrerinas.headunitrevived", "com.shihab.diplay",
                     "com.andrerinas.headunitrevived.bydhudtest", "com.shihab.diplay.hudtest")) return false
-            if (Build.FINGERPRINT != "BYD-AUTO/IVI/IVI:13/TP1A.220624.014/eng.build20260722.221155:user/release-keys") return false
+            val isBydPlatform = Build.FINGERPRINT.startsWith("BYD-AUTO") ||
+                Build.BRAND.equals("BYD", ignoreCase = true) ||
+                Build.MANUFACTURER.equals("BYD", ignoreCase = true) ||
+                Build.MODEL.contains("DiLink", ignoreCase = true)
+            if (!isBydPlatform) return false
             return runCatching {
                 val manager = context.packageManager
                 val info = manager.getPackageInfo(TARGET.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
                 val receiver = manager.getReceiverInfo(TARGET, 0)
                 val signers = info.signingInfo?.apkContentsSigners ?: return false
-                info.longVersionCode == 10601004L &&
+                info.longVersionCode >= 10601000L &&
+                    info.applicationInfo != null &&
                     info.applicationInfo!!.flags and ApplicationInfo.FLAG_SYSTEM != 0 &&
                     receiver.enabled && receiver.exported && receiver.permission.isNullOrEmpty() &&
                     signers.size == 1 && MessageDigest.getInstance("SHA-256").digest(signers[0].toByteArray())

@@ -88,3 +88,7 @@ docs/TELEGRAM_ANNOUNCEMENTS.md
 
 # oh-my-claudecode local state
 .omc/
+
+# Local build outputs
+build_output/
+

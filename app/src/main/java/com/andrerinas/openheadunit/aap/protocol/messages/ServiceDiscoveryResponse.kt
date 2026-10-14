@@ -67,11 +67,12 @@ class ServiceDiscoveryResponse(private val context: Context)
                             Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP
                         }
                         "Auto" -> {
-                            // Only use H.265 in Auto mode for 4K or if explicitly needed, 
-                            // otherwise prefer stable H.264
+                            // Use H.265 in Auto mode for 1080p and 4K when hardware HEVC is reliable,
+                            // dramatically reducing Wi-Fi bitrate and phone heat on wireless AA
                             val negotiatedResolution = HeadUnitScreenConfig.negotiatedResolutionType
-                            if (negotiatedResolution == Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._3840x2160 &&
-                                com.andrerinas.openheadunit.decoder.VideoDecoder.isHevcReliable()) {
+                            val isHighRes = negotiatedResolution == Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._3840x2160 ||
+                                negotiatedResolution == Control.Service.MediaSinkService.VideoConfiguration.VideoCodecResolutionType._1920x1080
+                            if (isHighRes && com.andrerinas.openheadunit.decoder.VideoDecoder.isHevcReliable()) {
                                 Media.MediaCodecType.MEDIA_CODEC_VIDEO_H265
                             } else {
                                 Media.MediaCodecType.MEDIA_CODEC_VIDEO_H264_BP

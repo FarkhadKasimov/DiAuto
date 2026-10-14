@@ -303,6 +303,7 @@
     <string name="settings_saved">Настройки сохранены</string>
     <string name="logs_exported">Логи экспортированы</string>
     <string name="log_saved_to">Лог сохранен в:\n%s</string>
+    <string name="log_saved_to_usb">Копия на USB-флешке:\n%s</string>
     <string name="share">Поделиться</string>
     <string name="close">Закрыть</string>
     <string name="failed_export_logs">Ошибка экспорта логов</string>

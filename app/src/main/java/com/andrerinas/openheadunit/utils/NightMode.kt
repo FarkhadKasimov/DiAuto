@@ -113,3 +113,44 @@ private class NightModeCalculator(private val settings: Settings) {
         return String.format(Locale.US, "%s, (%s - %s)", mode, sunrise, sunset)
     }
 }
+
+object VehicleIlluminationResolver {
+    fun resolve(context: android.content.Context): Boolean? {
+        val cr = context.contentResolver
+        // 1. Generic aftermarket head unit headlight signal (Settings.System.car_mode: 0 = day, 1 = night)
+        val carMode = try {
+            android.provider.Settings.System.getInt(cr, "car_mode")
+        } catch (_: Exception) { -1 }
+        if (carMode >= 0) return carMode != 0
+
+        // 2. BYD DiLink headlight / small lamp state (1 = on/night, 0 = off/day)
+        val bydLampState = try {
+            android.provider.Settings.Global.getInt(cr, "car_lamp_small_state")
+        } catch (_: Exception) { -1 }
+        if (bydLampState >= 0) return bydLampState != 0
+
+        // 3. BYD day/night mode settings key
+        val bydDayNight = try {
+            android.provider.Settings.Global.getInt(cr, "byd_day_night_mode")
+        } catch (_: Exception) {
+            try {
+                android.provider.Settings.System.getInt(cr, "byd_day_night_mode")
+            } catch (_: Exception) { -1 }
+        }
+        if (bydDayNight >= 0) return bydDayNight != 0
+
+        // 4. System UI night mode (DiLink auto day/night reflects vehicle ambiance and headlights)
+        val uiMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        if (uiMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) return true
+        if (uiMode == android.content.res.Configuration.UI_MODE_NIGHT_NO) return false
+
+        return null
+    }
+
+    fun observeUris(): List<android.net.Uri> = listOfNotNull(
+        android.provider.Settings.System.getUriFor("car_mode"),
+        android.provider.Settings.Global.getUriFor("car_lamp_small_state"),
+        android.provider.Settings.Global.getUriFor("byd_day_night_mode"),
+        android.provider.Settings.System.getUriFor("byd_day_night_mode")
+    )
+}

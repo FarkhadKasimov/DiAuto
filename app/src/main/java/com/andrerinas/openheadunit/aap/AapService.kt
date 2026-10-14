@@ -1450,6 +1450,13 @@ class AapService : Service(), UsbReceiver.Listener {
             // Microntek / MTCD / PX3 head units (ACC wake)
             addAction("com.cayboy.action.ACC_ON")
             addAction("com.carboy.action.ACC_ON")
+            // BYD DiLink / BYD Auto
+            addAction("byd.intent.action.POWER_ON")
+            addAction("byd.intent.action.ACC_ON")
+            addAction("com.byd.intent.action.POWER_ON")
+            addAction("com.byd.intent.action.ACC_ON")
+            addAction("com.byd.car.action.POWER_ON")
+            addAction("com.byd.car.action.ACC_ON")
         }
         ContextCompat.registerReceiver(
             this, wakeDetectReceiver,

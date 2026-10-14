@@ -1013,6 +1013,21 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         if (hasFocus) {
             setFullscreen() // Reapply fullscreen mode if window gains focus
             touchOverlayView?.requestFocus()
+            if (commManager.isConnected) {
+                runCatching { commManager.send(VideoFocusEvent(gain = true, unsolicited = true)) }
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        AppLog.i("AapProjectionActivity: onConfigurationChanged orientation=${newConfig.orientation}")
+        setFullscreen()
+        if (::projectionView.isInitialized) {
+            val view = projectionView as? View
+            view?.post {
+                ProjectionViewScaler.updateScale(view, videoDecoder.videoWidth, videoDecoder.videoHeight)
+            }
         }
     }
 

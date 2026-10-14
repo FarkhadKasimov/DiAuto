@@ -2,11 +2,17 @@ package com.andrerinas.openheadunit.utils
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
+import com.andrerinas.openheadunit.BuildConfig
+import com.andrerinas.openheadunit.decoder.VideoDecoder
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object LogExporter {
 
@@ -146,48 +152,123 @@ object LogExporter {
         captureThread = null
     }
 
+    data class ExportResult(
+        val localFile: File,
+        val usbFiles: List<File> = emptyList()
+    )
+
     /**
-     * Writes logs to a timestamped file and returns it.
-     * - If a capture file is available (capture was started, active or already stopped):
-     *   copies its content into a fresh export file so the original capture file is preserved.
-     * - Otherwise: dumps the current logcat ring buffer.
+     * Generates a comprehensive hardware, system, and DiAuto configuration header
+     * to prepend to exported diagnostic logs.
      */
-    fun saveLogToPublicFile(context: Context, verbosity: LogLevel): File? {
+    fun generateDiagnosticHeader(context: Context, settings: Settings): String {
+        val dm = context.resources.displayMetrics
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        val currentDate = sdf.format(Date())
+        val isByd = Settings.isBydPlatform()
+
+        return buildString {
+            appendLine("================================================================================")
+            appendLine("DiAuto Diagnostic Report")
+            appendLine("Generated: $currentDate")
+            appendLine("App Version: ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
+            appendLine("Package: ${context.packageName}")
+            appendLine("--------------------------------------------------------------------------------")
+            appendLine("DEVICE INFORMATION:")
+            appendLine("Manufacturer: ${Build.MANUFACTURER}")
+            appendLine("Brand: ${Build.BRAND}")
+            appendLine("Model: ${Build.MODEL}")
+            appendLine("Device / Board: ${Build.DEVICE} / ${Build.BOARD}")
+            appendLine("Hardware: ${Build.HARDWARE}")
+            appendLine("Fingerprint: ${Build.FINGERPRINT}")
+            appendLine("Android OS: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine("Display Metrics: ${dm.widthPixels}x${dm.heightPixels}, Density: ${dm.densityDpi} dpi")
+            appendLine("BYD Platform Detected: $isByd")
+            appendLine("--------------------------------------------------------------------------------")
+            appendLine("CURRENT DIAUTO CONFIGURATION:")
+            appendLine("Resolution Setting: ${settings.resolutionId}")
+            appendLine("FPS Limit: ${settings.fpsLimit}")
+            appendLine("DPI: ${settings.dpiPixelDensity}")
+            appendLine("Video Codec: ${settings.videoCodec} (Hardware HEVC Reliable: ${VideoDecoder.isHevcReliable()})")
+            appendLine("Renderer ViewMode: ${settings.viewMode}")
+            appendLine("BYD HUD Navigation: ${settings.bydNavigationEnabled}")
+            appendLine("Music via Bluetooth: ${settings.musicViaBluetooth}")
+            appendLine("Sync MediaSession Metadata: ${settings.syncMediaSessionWithAaMetadata}")
+            appendLine("DSP Equalizer Attached: ${settings.attachHwDspEqualizer}")
+            appendLine("Separate Audio Streams: ${settings.separateAudioStreams}")
+            appendLine("Night Mode Setting: ${settings.nightMode}")
+            appendLine("Log Source: ${settings.logSource}, Exporter Level: ${settings.exporterLogLevel}")
+            appendLine("================================================================================")
+            appendLine()
+        }
+    }
+
+    /**
+     * Exports full diagnostic logs prepended with device info, saving to internal/Downloads
+     * and automatically copying to any mounted USB flash drives.
+     */
+    fun exportLogsWithSummary(context: Context, verbosity: LogLevel): ExportResult? {
         if (verbosity == LogLevel.SILENT) {
             AppLog.w("LogExporter: export requested while SILENT; skipping export")
             return null
         }
 
-        if (AppLog.logSource == Settings.LogSource.APPLOG_FILE) {
-            return (AppLog.currentLogFile ?: AppLog.lastLogFile)
-                ?.takeIf { it.exists() && it.length() > 0 }
-        }
-
         val settings = Settings(context)
-        val logDir = LogFilesHelper.resolveLogDirectory(context, settings, allowInternalFallback = false) ?: return null
+        val logDir = LogFilesHelper.resolveLogDirectory(context, settings, allowInternalFallback = true) ?: return null
         LogFilesHelper.ensureDirectory(logDir)
+        LogFilesHelper.rotateLogs(logDir)
 
-        val source = captureFile
-        if (source != null && source.exists() && source.length() > 0) {
-            return source
-        }
+        val logFile = LogFilesHelper.createTimestampedLogFile(logDir)
+        val header = generateDiagnosticHeader(context, settings)
 
-        return try {
-            LogFilesHelper.rotateLogs(logDir)
-            val logFile = LogFilesHelper.createTimestampedLogFile(logDir)
-            // Use stdout piping instead of -f flag; -f is unreliable on Android 4.4.
-            val process = Runtime.getRuntime().exec(
-                arrayOf("logcat", "-d", "-v", "threadtime", verbosity.filter)
-            )
+        try {
             FileOutputStream(logFile).use { out ->
-                process.inputStream.copyTo(out)
+                out.write(header.toByteArray(Charsets.UTF_8))
+
+                val source = captureFile ?: if (settings.logSource == Settings.LogSource.APPLOG_FILE) {
+                    (AppLog.currentLogFile ?: AppLog.lastLogFile)?.takeIf { it.exists() && it.length() > 0 }
+                } else null
+
+                if (source != null && source.exists() && source.length() > 0) {
+                    source.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                } else {
+                    val process = Runtime.getRuntime().exec(
+                        arrayOf("logcat", "-d", "-v", "threadtime", verbosity.filter)
+                    )
+                    process.inputStream.copyTo(out)
+                    process.waitFor()
+                }
             }
-            process.waitFor()
-            logFile
         } catch (e: Exception) {
-            AppLog.e("Failed to save logs", e)
-            null
+            AppLog.e("Failed to save log file", e)
+            return null
         }
+
+        // Automatic copy to any detected USB flash drives / OTG volumes
+        val usbFiles = mutableListOf<File>()
+        val usbDirs = LogFilesHelper.findUsbStorageLogDirs(context)
+        for (usbDir in usbDirs) {
+            try {
+                LogFilesHelper.ensureDirectory(usbDir)
+                val targetFile = File(usbDir, logFile.name)
+                logFile.copyTo(targetFile, overwrite = true)
+                usbFiles.add(targetFile)
+                AppLog.i("Successfully copied log to USB: ${targetFile.absolutePath}")
+            } catch (e: Exception) {
+                AppLog.w("Failed to copy log to USB dir ${usbDir.absolutePath}: ${e.message}")
+            }
+        }
+
+        return ExportResult(localFile = logFile, usbFiles = usbFiles)
+    }
+
+    /**
+     * Writes logs to a timestamped file and returns it.
+     */
+    fun saveLogToPublicFile(context: Context, verbosity: LogLevel): File? {
+        return exportLogsWithSummary(context, verbosity)?.localFile
     }
 
     fun shareLogFile(context: Context, file: File) {

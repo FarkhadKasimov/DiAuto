@@ -91,7 +91,14 @@ class BootCompleteReceiver : BroadcastReceiver() {
             "android.intent.action.ACTION_MT_COMMAND_SLEEP_OUT",
             // Microntek / MTCD / PX3 head units (ACC wake)
             "com.cayboy.action.ACC_ON",
-            "com.carboy.action.ACC_ON"
+            "com.carboy.action.ACC_ON",
+            // BYD DiLink / BYD Auto
+            "byd.intent.action.POWER_ON",
+            "byd.intent.action.ACC_ON",
+            "com.byd.intent.action.POWER_ON",
+            "com.byd.intent.action.ACC_ON",
+            "com.byd.car.action.POWER_ON",
+            "com.byd.car.action.ACC_ON"
         )
     }
 }

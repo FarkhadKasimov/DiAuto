@@ -599,6 +599,7 @@
     <string name="share_settings_backup">Share settings backup</string>
     <string name="logs_exported">Logs Exported</string>
     <string name="log_saved_to">Log saved to:\n%s</string>
+    <string name="log_saved_to_usb">USB copy saved to:\n%s</string>
     <string name="share">Share</string>
     <string name="close">Close</string>
     <string name="failed_export_logs">Failed to export logs</string>

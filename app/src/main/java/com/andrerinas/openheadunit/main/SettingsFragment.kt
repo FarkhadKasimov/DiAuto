@@ -76,7 +76,8 @@ class SettingsFragment : Fragment() {
     private val basicSettingIds = setOf(
         "staticBSSID", "appLanguage", "autoStartSettings", "autoConnectSettings", "resolution",
         "dpiPixelDensity", "viewMode", "fpsLimit", "musicViaBluetooth", "enableAudioSink", "micSettings", "audioVolumeOffsets",
-        "keymap", "version", "about"
+        "keymap", "version", "about", "bydNavigation", "syncMediaSessionAaMetadata",
+        "captureLog", "exportLogs"
     )
 
     // Local state to hold changes before saving
@@ -2139,15 +2140,22 @@ class SettingsFragment : Fragment() {
                 } else if (LogExporter.isCapturing) {
                     LogExporter.stopCapture()
                 }
-                val logFile = LogExporter.saveLogToPublicFile(context, exporterLevel)
+                val result = LogExporter.exportLogsWithSummary(context, exporterLevel)
                 updateSettingsList()
 
-                if (logFile != null) {
+                if (result != null) {
+                    val message = buildString {
+                        append(getString(R.string.log_saved_to, result.localFile.absolutePath))
+                        if (result.usbFiles.isNotEmpty()) {
+                            append("\n\n")
+                            append(getString(R.string.log_saved_to_usb, result.usbFiles.joinToString("\n") { it.absolutePath }))
+                        }
+                    }
                     MaterialAlertDialogBuilder(context, R.style.DarkAlertDialog)
                         .setTitle(R.string.logs_exported)
-                        .setMessage(getString(R.string.log_saved_to, logFile.absolutePath))
+                        .setMessage(message)
                         .setPositiveButton(R.string.share) { _, _ ->
-                            LogExporter.shareLogFile(context, logFile)
+                            LogExporter.shareLogFile(context, result.localFile)
                         }
                         .setNegativeButton(R.string.close) { dialog, _ ->
                             dialog.dismiss()

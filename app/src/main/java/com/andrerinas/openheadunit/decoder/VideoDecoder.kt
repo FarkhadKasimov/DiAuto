@@ -1831,8 +1831,9 @@ class VideoDecoder(
                     }
 
                     var alsoRendered = 0
-                    val firstToRender = if (readyCount > 2)
-                        readyCount - if (pacer != null) 2 else 1 else 0
+                    val maxBurstKeep = if (pacer != null) 3 else 1
+                    val firstToRender = if (readyCount > maxBurstKeep)
+                        readyCount - maxBurstKeep else 0
                     for (i in 0 until firstToRender) {
                         currentCodec.releaseOutputBuffer(readyIndices[i], false)
                     }

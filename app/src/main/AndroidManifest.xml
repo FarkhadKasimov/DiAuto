@@ -84,6 +84,7 @@
         android:label="@string/title"
         android:largeHeap="true"
         android:supportsRtl="true"
+        android:requestLegacyExternalStorage="true"
         android:localeConfig="@xml/locales_config"
         tools:ignore="GoogleAppIndexingWarning">
 
@@ -264,6 +265,11 @@
                 <action android:name="com.bz.action.phone.hangup" />
                 <action android:name="com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY" />
                 <action android:name="cn.kuwo.kwmusicauto.action.MEDIA_BUTTON" />
+                <!-- BYD DiLink -->
+                <action android:name="byd.intent.action.MEDIA_BUTTON" />
+                <action android:name="com.byd.intent.action.MEDIA_BUTTON" />
+                <action android:name="com.byd.car.action.KEY_EVENT" />
+                <action android:name="com.byd.car.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
 
@@ -289,6 +295,13 @@
                 <!-- Microntek / MTCD / PX3 head units (ACC wake) -->
                 <action android:name="com.cayboy.action.ACC_ON" />
                 <action android:name="com.carboy.action.ACC_ON" />
+                <!-- BYD DiLink / BYD Auto -->
+                <action android:name="byd.intent.action.POWER_ON" />
+                <action android:name="byd.intent.action.ACC_ON" />
+                <action android:name="com.byd.intent.action.POWER_ON" />
+                <action android:name="com.byd.intent.action.ACC_ON" />
+                <action android:name="com.byd.car.action.POWER_ON" />
+                <action android:name="com.byd.car.action.ACC_ON" />
             </intent-filter>
         </receiver>
 

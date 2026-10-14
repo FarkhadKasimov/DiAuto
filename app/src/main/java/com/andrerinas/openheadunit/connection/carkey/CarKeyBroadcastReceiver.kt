@@ -41,8 +41,11 @@ class CarKeyBroadcastReceiver : BroadcastReceiver(), CarKeyReceiver {
             "com.eryanet.media.pause",
             "com.bz.action.phone.pickup", // BZ (Joying etc.)
             "com.bz.action.phone.hangup",
-            "com.tencent.qqmusiccar.action.MEDIA_BUTTON_INNER_ONKEY",
-            "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON"
+            "cn.kuwo.kwmusicauto.action.MEDIA_BUTTON",
+            "byd.intent.action.MEDIA_BUTTON", // BYD DiLink
+            "com.byd.intent.action.MEDIA_BUTTON",
+            "com.byd.car.action.KEY_EVENT",
+            "com.byd.car.action.MEDIA_BUTTON"
         )
     }
 
