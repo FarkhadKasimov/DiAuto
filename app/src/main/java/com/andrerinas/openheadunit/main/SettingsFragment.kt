@@ -77,7 +77,7 @@ class SettingsFragment : Fragment() {
         "staticBSSID", "appLanguage", "autoStartSettings", "autoConnectSettings", "resolution",
         "dpiPixelDensity", "viewMode", "fpsLimit", "musicViaBluetooth", "enableAudioSink", "micSettings", "audioVolumeOffsets",
         "keymap", "version", "about", "bydNavigation", "syncMediaSessionAaMetadata",
-        "captureLog", "exportLogs"
+        "captureLog", "exportLogs", "clusterMap"
     )
 
     // Local state to hold changes before saving
