@@ -33,4 +33,5 @@
     <!-- Segmented Button Colors -->
     <color name="segmented_button_stroke">#808080</color>
 
+    <color name="da_ready_green">#10B981</color>
 </resources>

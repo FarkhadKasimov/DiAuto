@@ -67,6 +67,7 @@ class SettingsFragment : Fragment() {
     private var settingsTabGroup: com.google.android.material.button.MaterialButtonToggleGroup? = null
     private var searchInput: com.google.android.material.textfield.TextInputEditText? = null
     private var activeTab: SettingsTier = SettingsTier.BASIC
+    private var selectedCategory: String? = null
     private var searchQuery: String = ""
     // The complete, unfiltered list built by updateSettingsList(); rendering filters this.
     private var fullSettingsList: List<SettingItem> = emptyList()
@@ -96,6 +97,7 @@ class SettingsFragment : Fragment() {
     private var pendingBydLeftHandTraffic: Boolean? = null
     private var pendingShowNavigationNotifications: Boolean? = null
     private var pendingSyncMediaSessionAaMetadata: Boolean? = null
+    private var pendingBydAmbientLightingEnabled: Boolean? = null
     private var pendingResolution: Int? = null
     private var pendingDpi: Int? = null
     private var pendingPixelAspectRatioE4: Int? = null
@@ -231,6 +233,7 @@ class SettingsFragment : Fragment() {
         pendingBydLeftHandTraffic = settings.bydLeftHandTraffic
         pendingShowNavigationNotifications = settings.showNavigationNotifications
         pendingSyncMediaSessionAaMetadata = settings.syncMediaSessionWithAaMetadata
+        pendingBydAmbientLightingEnabled = settings.bydAmbientLightingEnabled
         pendingResolution = settings.resolutionId
         pendingDpi = settings.dpiPixelDensity
         pendingPixelAspectRatioE4 = settings.pixelAspectRatioE4
@@ -355,6 +358,7 @@ class SettingsFragment : Fragment() {
         pendingBydLeftHandTraffic = settings.bydLeftHandTraffic
         pendingShowNavigationNotifications = settings.showNavigationNotifications
         pendingSyncMediaSessionAaMetadata = settings.syncMediaSessionWithAaMetadata
+        pendingBydAmbientLightingEnabled = settings.bydAmbientLightingEnabled
         pendingResolution = settings.resolutionId
         pendingDpi = settings.dpiPixelDensity
         pendingPixelAspectRatioE4 = settings.pixelAspectRatioE4
@@ -440,6 +444,11 @@ class SettingsFragment : Fragment() {
     }
 
     private fun handleBackPress() {
+        if (selectedCategory != null) {
+            selectedCategory = null
+            renderSettings()
+            return
+        }
         if (hasChanges) {
             MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
                 .setTitle(R.string.unsaved_changes)
@@ -486,6 +495,7 @@ class SettingsFragment : Fragment() {
         pendingBydLeftHandTraffic?.let { settings.bydLeftHandTraffic = it }
         pendingShowNavigationNotifications?.let { settings.showNavigationNotifications = it }
         pendingSyncMediaSessionAaMetadata?.let { settings.syncMediaSessionWithAaMetadata = it }
+        pendingBydAmbientLightingEnabled?.let { settings.bydAmbientLightingEnabled = it }
         pendingResolution?.let { settings.resolutionId = it }
         pendingDpi?.let { settings.dpiPixelDensity = it }
         pendingPixelAspectRatioE4?.let { settings.pixelAspectRatioE4 = it }
@@ -618,6 +628,7 @@ class SettingsFragment : Fragment() {
                         pendingBydLeftHandTraffic != settings.bydLeftHandTraffic ||
                         pendingShowNavigationNotifications != settings.showNavigationNotifications ||
                         pendingSyncMediaSessionAaMetadata != settings.syncMediaSessionWithAaMetadata ||
+                        pendingBydAmbientLightingEnabled != settings.bydAmbientLightingEnabled ||
                         pendingResolution != settings.resolutionId ||
                         pendingDpi != settings.dpiPixelDensity ||
                         pendingPixelAspectRatioE4 != settings.pixelAspectRatioE4 ||
@@ -1426,6 +1437,39 @@ class SettingsFragment : Fragment() {
                     pendingSyncMediaSessionAaMetadata = isChecked
                     checkChanges()
                     updateSettingsList()
+                }
+            ))
+        }
+
+        if (Settings.isBydPlatform()) {
+            items.add(SettingItem.CategoryHeader("ambient", R.string.category_ambient_lighting))
+
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "bydAmbientLighting",
+                nameResId = R.string.ambient_lighting_title,
+                descriptionResId = R.string.ambient_lighting_description,
+                isChecked = pendingBydAmbientLightingEnabled ?: false,
+                onCheckedChanged = { enabled ->
+                    pendingBydAmbientLightingEnabled = enabled
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+
+            items.add(SettingItem.SettingEntry(
+                stableId = "localAdbStatus",
+                nameResId = R.string.local_adb_title,
+                value = getString(R.string.local_adb_desc),
+                onClick = {
+                    val ctx = requireContext()
+                    android.widget.Toast.makeText(ctx, R.string.local_adb_title, android.widget.Toast.LENGTH_SHORT).show()
+                    Thread {
+                        val ok = com.andrerinas.openheadunit.adb.BydAdbAccess.grantPermissionsIfPossible(ctx)
+                        activity?.runOnUiThread {
+                            val msg = if (ok) R.string.local_adb_perms_granted else R.string.permission_not_enabled
+                            android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }.start()
                 }
             ))
         }
@@ -2439,6 +2483,7 @@ class SettingsFragment : Fragment() {
         settingsTabGroup?.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             activeTab = if (checkedId == R.id.tabAdvanced) SettingsTier.ADVANCED else SettingsTier.BASIC
+            selectedCategory = null
             renderSettings()
         }
 
@@ -2499,7 +2544,65 @@ class SettingsFragment : Fragment() {
     // at least one of their children survives (so no empty sections show).
     private fun filterSettings(full: List<SettingItem>): List<SettingItem> {
         val query = searchQuery.trim()
+
+        // Overview mode: Basic tab with no active search and no selected category shows DiPlay-style category cards
+        if (activeTab == SettingsTier.BASIC && query.isEmpty() && selectedCategory == null) {
+            val overview = mutableListOf<SettingItem>()
+            val isByd = Settings.isBydPlatform()
+            overview.add(SettingItem.ReadinessCard(
+                stableId = "readinessCard",
+                titleResId = R.string.readiness_title,
+                subtitleResId = if (isByd) R.string.readiness_byd_detected else R.string.readiness_ready,
+                isReady = true,
+                onClick = {}
+            ))
+
+            fun addCategory(id: String, titleRes: Int, descRes: Int) {
+                overview.add(SettingItem.CategoryCard(
+                    stableId = "cat_$id",
+                    titleResId = titleRes,
+                    subtitleResId = descRes,
+                    categoryId = id,
+                    onClick = { catId ->
+                        selectedCategory = catId
+                        renderSettings()
+                    }
+                ))
+            }
+
+            if (isByd || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
+                    com.andrerinas.openheadunit.hud.ClusterMapScreen.findDisplay(requireContext()) != null)) {
+                addCategory("driverDisplay", R.string.category_driver_display, R.string.category_driver_display_desc)
+            }
+            if (isByd) {
+                addCategory("ambient", R.string.category_ambient_lighting, R.string.category_ambient_lighting_desc)
+            }
+            if (settings.showsWifi()) {
+                addCategory("wirelessConnection", R.string.category_wireless, R.string.category_general_desc)
+            }
+            addCategory("graphic", R.string.category_graphic, R.string.category_graphic_desc)
+            addCategory("audio", R.string.category_audio, R.string.category_audio_desc)
+            addCategory("navigation", R.string.category_navigation, R.string.category_navigation_desc)
+            addCategory("input", R.string.category_vehicle_controls, R.string.category_vehicle_controls_desc)
+            addCategory("automation", R.string.category_automation, R.string.category_automation_desc)
+            addCategory("debug", R.string.category_debug, R.string.category_debug_desc)
+            addCategory("info", R.string.category_info, R.string.category_info_desc)
+
+            return overview
+        }
+
         val result = mutableListOf<SettingItem>()
+        if (activeTab == SettingsTier.BASIC && query.isEmpty() && selectedCategory != null) {
+            result.add(SettingItem.BackButton(
+                stableId = "backButton",
+                titleResId = R.string.back_to_categories,
+                onClick = {
+                    selectedCategory = null
+                    renderSettings()
+                }
+            ))
+        }
+
         var pendingHeader: SettingItem.CategoryHeader? = null
         var currentCategoryId: String? = null
         var headerMatchesQuery = false
@@ -2511,6 +2614,9 @@ class SettingsFragment : Fragment() {
                 headerMatchesQuery = query.isNotEmpty() &&
                     getString(item.titleResId).contains(query, ignoreCase = true)
                 continue
+            }
+            if (activeTab == SettingsTier.BASIC && query.isEmpty() && selectedCategory != null) {
+                if (currentCategoryId != selectedCategory) continue
             }
             if (shouldShowItem(item, currentCategoryId, query, headerMatchesQuery)) {
                 pendingHeader?.let { result.add(it); pendingHeader = null }
@@ -2542,7 +2648,7 @@ class SettingsFragment : Fragment() {
             return headerMatchesQuery || searchableText(item).contains(query, ignoreCase = true)
         }
 
-        if (activeTab == SettingsTier.ADVANCED) return true
+        if (activeTab == SettingsTier.ADVANCED || selectedCategory != null) return true
 
         return item.stableId in basicSettingIds
     }
@@ -2575,6 +2681,9 @@ class SettingsFragment : Fragment() {
         is SettingItem.InfoBanner -> item.text ?: getString(item.textResId)
         is SettingItem.ActionButton -> getString(item.textResId)
         is SettingItem.CategoryHeader -> getString(item.titleResId)
+        is SettingItem.CategoryCard -> "${getString(item.titleResId)} ${getString(item.subtitleResId)}"
+        is SettingItem.ReadinessCard -> "${getString(item.titleResId)} ${getString(item.subtitleResId)}"
+        is SettingItem.BackButton -> getString(item.titleResId)
     }
 
     /** The chosen connection types as a readable label ("USB, WiFi"); empty shows all. */

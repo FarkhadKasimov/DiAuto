@@ -56,6 +56,20 @@
     <string name="category_navigation">Навигация</string>
     <string name="category_driver_display">Экран водителя (Приборная панель и HUD)</string>
     <string name="category_wireless">Беспроводное соединение</string>
+    <string name="category_ambient_lighting">Подсветка BYD (Цветомузыка)</string>
+    <string name="category_ambient_lighting_desc">Синхронизация салонной контурной подсветки с ритмом музыки</string>
+    <string name="ambient_lighting_title">Цветомузыка под ритм треков</string>
+    <string name="ambient_lighting_description">Штатная салонная RGB-подсветка автомобиля BYD пульсирует и меняет цвета в такт играющей музыке из Android Auto</string>
+    <string name="category_vehicle_controls">Автомобиль и кнопки на руле</string>
+    <string name="category_vehicle_controls_desc">Назначение клавиш руля, управление громкостью и ассистентом</string>
+    <string name="back_to_categories">‹ Назад к категориям</string>
+    <string name="readiness_title">Статус автомобиля и служб</string>
+    <string name="readiness_ready">Все службы активны, автомобиль готов к подключению</string>
+    <string name="readiness_byd_detected">Обнаружен автомобиль BYD (DiLink)</string>
+    <string name="local_adb_title">Локальный ADB</string>
+    <string name="local_adb_desc">Связь с системой автомобиля через порт 5555 для чтения данных и выдачи разрешений</string>
+    <string name="local_adb_grant_perms">Выдать системные разрешения через ADB</string>
+    <string name="local_adb_perms_granted">Разрешения успешно выданы</string>
 
     <string name="reconnection_required_title">Требуется переподключение</string>
     <string name="reconnection_required_message">Устройство находится в режиме ожидания. Отсоедините и снова подключите USB-кабель для перезапуска Android Auto.</string>
@@ -661,8 +675,8 @@
     <string name="coordinates_format_help">Десятичные градусы, точка или запятая. Пример: 40.4168, -3.7038</string>
 
     <!-- Onboarding & settings tabs -->
-    <string name="settings_tab_basic">Основные</string>
-    <string name="settings_tab_advanced">Расширенные</string>
+    <string name="settings_tab_basic">Категории</string>
+    <string name="settings_tab_advanced">Все настройки</string>
     <string name="settings_search_hint">Поиск настроек</string>
     <string name="connection_mode">Режим подключения</string>
     <string name="connection_kind_usb_cable">USB-кабель (напрямую)</string>
@@ -1001,4 +1015,15 @@
     <string name="turn_card_info_km">%1$.1f км</string>
     <string name="cluster_usage_access_hint">В режиме «Сценарий» боковая карта видна на всех карточках приборной панели. Разрешите DiAuto «Доступ к истории использования», чтобы она показывалась только на карточке карты. Если кнопка ничего не открывает, разрешение можно выдать через ADB: appops set com.andrerinas.headunitrevived GET_USAGE_STATS allow</string>
     <string name="cluster_usage_access_grant">Разрешить доступ к истории использования</string>
+    <string name="adb_status_ready">Подключено (localhost:5555)</string>
+    <string name="adb_status_off">Отключено</string>
+    <string name="permission_not_enabled">Разрешение не предоставлено</string>
+    <string name="category_general_desc">Основные параметры подключения и запуска</string>
+    <string name="category_graphic_desc">Разрешение, плотность DPI, лимит FPS и ориентация</string>
+    <string name="category_audio_desc">Аудиовыходы, фокус звука, кодеки и микрофон</string>
+    <string name="category_navigation_desc">Источник GPS и трансляция на приборную панель</string>
+    <string name="category_driver_display_desc">Приборная панель, проекция HUD и спидометр</string>
+    <string name="category_automation_desc">Автозапуск, точки доступа и системные события</string>
+    <string name="category_debug_desc">Логирование, локальный ADB и диагностика</string>
+    <string name="category_info_desc">Версия приложения, история изменений и лицензии</string>
 </resources>

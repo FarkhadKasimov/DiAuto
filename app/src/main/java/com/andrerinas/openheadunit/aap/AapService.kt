@@ -384,6 +384,10 @@ class AapService : Service(), UsbReceiver.Listener {
         lastAaPlaybackIsPlaying = isPlayingFromStatus
         mediaSessionIsPlaying = isPlayingFromStatus
 
+        if (App.provide(this).settings.bydAmbientLightingEnabled && Settings.isBydPlatform()) {
+            com.andrerinas.openheadunit.hud.BydCarMusicRhythm.setPlaying(this, isPlayingFromStatus)
+        }
+
         if (!App.provide(this).settings.syncMediaSessionWithAaMetadata) return
         updateMediaSessionState(isPlayingFromStatus)
         lastAaMediaMetadata?.let { updateMediaNotification(it) }
@@ -1810,6 +1814,9 @@ class AapService : Service(), UsbReceiver.Listener {
 
     override fun onDestroy() {
         com.andrerinas.openheadunit.hud.BydNavigationOutputs.stop()
+        if (Settings.isBydPlatform()) {
+            com.andrerinas.openheadunit.hud.BydCarMusicRhythm.setPlaying(this, false)
+        }
         AppLog.i("AapService destroying... (wakeLock held=${bootWakeLock?.isHeld == true})")
         isDestroying = true
         mediaMetadataDecodeJob?.cancel()

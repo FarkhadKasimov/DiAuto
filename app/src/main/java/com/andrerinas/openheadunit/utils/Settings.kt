@@ -170,6 +170,13 @@ class Settings(private val context: Context) {
             prefs.edit().putBoolean(KEY_SYNC_MEDIA_SESSION_AA_METADATA, value).apply()
         }
 
+    /** Synchronize BYD interior ambient lighting with the music rhythm. */
+    var bydAmbientLightingEnabled: Boolean
+        get() = prefs.getBoolean("byd-ambient-lighting-enabled", false)
+        set(value) {
+            prefs.edit().putBoolean("byd-ambient-lighting-enabled", value).apply()
+        }
+
     var nightMode: NightMode
         get() {
             val value = prefs.getInt("night-mode", 0)

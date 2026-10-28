@@ -67,9 +67,32 @@ sealed class SettingItem {
     data class SegmentedButtonSettingEntry(
         override val stableId: String,
         @StringRes val nameResId: Int,
-        val options: List<String>, // Exactly 3 options for now as per layout
+        val options: List<String>,
         var selectedIndex: Int,
         val onOptionSelected: (Int) -> Unit
+    ) : SettingItem()
+
+    data class CategoryCard(
+        override val stableId: String,
+        @StringRes val titleResId: Int,
+        @StringRes val subtitleResId: Int,
+        val iconRes: Int = 0,
+        val categoryId: String,
+        val onClick: (categoryId: String) -> Unit
+    ) : SettingItem()
+
+    data class ReadinessCard(
+        override val stableId: String = "readinessCard",
+        @StringRes val titleResId: Int = R.string.readiness_title,
+        @StringRes val subtitleResId: Int = R.string.readiness_ready,
+        val isReady: Boolean = true,
+        val onClick: () -> Unit = {}
+    ) : SettingItem()
+
+    data class BackButton(
+        override val stableId: String = "backButton",
+        @StringRes val titleResId: Int = R.string.back_to_categories,
+        val onClick: () -> Unit
     ) : SettingItem()
 }
 
@@ -84,6 +107,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private const val VIEW_TYPE_INFO_BANNER = 5
         private const val VIEW_TYPE_ACTION_BUTTON = 6
         private const val VIEW_TYPE_SEGMENTED = 7
+        private const val VIEW_TYPE_CATEGORY_CARD = 8
+        private const val VIEW_TYPE_READINESS_CARD = 9
+        private const val VIEW_TYPE_BACK_BUTTON = 10
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -95,6 +121,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             is SettingItem.InfoBanner -> VIEW_TYPE_INFO_BANNER
             is SettingItem.ActionButton -> VIEW_TYPE_ACTION_BUTTON
             is SettingItem.SegmentedButtonSettingEntry -> VIEW_TYPE_SEGMENTED
+            is SettingItem.CategoryCard -> VIEW_TYPE_CATEGORY_CARD
+            is SettingItem.ReadinessCard -> VIEW_TYPE_READINESS_CARD
+            is SettingItem.BackButton -> VIEW_TYPE_BACK_BUTTON
         }
     }
 
@@ -108,6 +137,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             VIEW_TYPE_INFO_BANNER -> InfoBannerViewHolder(inflater.inflate(R.layout.layout_setting_info_banner, parent, false))
             VIEW_TYPE_ACTION_BUTTON -> ActionButtonViewHolder(inflater.inflate(R.layout.layout_setting_action_button, parent, false))
             VIEW_TYPE_SEGMENTED -> SegmentedButtonViewHolder(inflater.inflate(R.layout.layout_setting_item_segmented, parent, false))
+            VIEW_TYPE_CATEGORY_CARD -> CategoryCardViewHolder(inflater.inflate(R.layout.layout_setting_category_card, parent, false))
+            VIEW_TYPE_READINESS_CARD -> ReadinessCardViewHolder(inflater.inflate(R.layout.layout_setting_readiness_card, parent, false))
+            VIEW_TYPE_BACK_BUTTON -> BackButtonViewHolder(inflater.inflate(R.layout.layout_setting_back_button, parent, false))
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
     }
@@ -127,6 +159,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             is SettingItem.InfoBanner -> (holder as InfoBannerViewHolder).bind(item)
             is SettingItem.ActionButton -> (holder as ActionButtonViewHolder).bind(item)
             is SettingItem.SegmentedButtonSettingEntry -> (holder as SegmentedButtonViewHolder).bind(item)
+            is SettingItem.CategoryCard -> (holder as CategoryCardViewHolder).bind(item)
+            is SettingItem.ReadinessCard -> (holder as ReadinessCardViewHolder).bind(item)
+            is SettingItem.BackButton -> (holder as BackButtonViewHolder).bind(item)
         }
     }
 
@@ -297,6 +332,34 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         }
     }
 
+    class CategoryCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val title: TextView = itemView.findViewById(R.id.categoryCardTitle)
+        private val subtitle: TextView = itemView.findViewById(R.id.categoryCardSubtitle)
+        fun bind(item: SettingItem.CategoryCard) {
+            title.setText(item.titleResId)
+            subtitle.setText(item.subtitleResId)
+            itemView.setOnClickListener { item.onClick(item.categoryId) }
+        }
+    }
+
+    class ReadinessCardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val title: TextView = itemView.findViewById(R.id.readinessTitle)
+        private val subtitle: TextView = itemView.findViewById(R.id.readinessSubtitle)
+        fun bind(item: SettingItem.ReadinessCard) {
+            title.setText(item.titleResId)
+            subtitle.setText(item.subtitleResId)
+            itemView.setOnClickListener { item.onClick() }
+        }
+    }
+
+    class BackButtonViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val text: TextView = itemView.findViewById(R.id.backButtonText)
+        fun bind(item: SettingItem.BackButton) {
+            text.setText(item.titleResId)
+            itemView.setOnClickListener { item.onClick() }
+        }
+    }
+
     // DiffUtil.ItemCallback implementation
     private class SettingsDiffCallback : DiffUtil.ItemCallback<SettingItem>() {
         override fun areItemsTheSame(oldItem: SettingItem, newItem: SettingItem): Boolean {
@@ -319,6 +382,12 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
                     oldItem.textResId == newItem.textResId && oldItem.isEnabled == newItem.isEnabled
                 oldItem is SettingItem.SegmentedButtonSettingEntry && newItem is SettingItem.SegmentedButtonSettingEntry ->
                     oldItem.nameResId == newItem.nameResId && oldItem.options == newItem.options && oldItem.selectedIndex == newItem.selectedIndex
+                oldItem is SettingItem.CategoryCard && newItem is SettingItem.CategoryCard ->
+                    oldItem.titleResId == newItem.titleResId && oldItem.subtitleResId == newItem.subtitleResId && oldItem.categoryId == newItem.categoryId
+                oldItem is SettingItem.ReadinessCard && newItem is SettingItem.ReadinessCard ->
+                    oldItem.titleResId == newItem.titleResId && oldItem.subtitleResId == newItem.subtitleResId && oldItem.isReady == newItem.isReady
+                oldItem is SettingItem.BackButton && newItem is SettingItem.BackButton ->
+                    oldItem.titleResId == newItem.titleResId
                 else -> false
             }
         }

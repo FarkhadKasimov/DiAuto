@@ -4,8 +4,8 @@
     <string name="settings">Settings</string>
 
     <!-- Settings tabs and search (redesign) -->
-    <string name="settings_tab_basic">Basic</string>
-    <string name="settings_tab_advanced">Advanced</string>
+    <string name="settings_tab_basic">Categories</string>
+    <string name="settings_tab_advanced">All Settings</string>
     <string name="settings_search_hint">Search settings</string>
 
     <!-- Connection mode selector -->
@@ -233,6 +233,20 @@
     <string name="category_navigation">Navigation</string>
     <string name="category_driver_display">Driver Display (Cluster &amp; HUD)</string>
     <string name="category_wireless">Wireless Connection</string>
+    <string name="category_ambient_lighting">BYD Ambient Lighting (Music Rhythm)</string>
+    <string name="category_ambient_lighting_desc">Synchronize interior ambient RGB lights with music rhythm</string>
+    <string name="ambient_lighting_title">Music Rhythm Ambient Lighting</string>
+    <string name="ambient_lighting_description">Factory interior RGB ambient lighting of BYD vehicle pulses and reacts to music played from Android Auto</string>
+    <string name="category_vehicle_controls">Vehicle &amp; Steering Wheel</string>
+    <string name="category_vehicle_controls_desc">Steering wheel key assignments, volume and assistant controls</string>
+    <string name="back_to_categories">‹ Back to Categories</string>
+    <string name="readiness_title">Vehicle &amp; Service Readiness</string>
+    <string name="readiness_ready">All services active, vehicle ready to connect</string>
+    <string name="readiness_byd_detected">BYD vehicle detected (DiLink)</string>
+    <string name="local_adb_title">Local ADB Link</string>
+    <string name="local_adb_desc">Internal connection via localhost:5555 for vehicle data and auto-granting permissions</string>
+    <string name="local_adb_grant_perms">Auto-grant system permissions via ADB</string>
+    <string name="local_adb_perms_granted">Permissions granted successfully</string>
 
     <string name="reconnection_required_title">Reconnection Required</string>
     <string name="reconnection_required_message">The device is in a waiting state. Please unplug and re-plug the USB cable to start Android Auto again.</string>
@@ -1054,4 +1068,15 @@
     <string name="turn_card_info_km">%1$.1f km</string>
     <string name="cluster_usage_access_hint">In Scenario the side map shows on every cluster card. Allow Usage access for DiAuto so it shows only on the map card. If the button opens nothing, it can be granted over ADB: appops set com.andrerinas.headunitrevived GET_USAGE_STATS allow</string>
     <string name="cluster_usage_access_grant">Allow Usage access</string>
+    <string name="adb_status_ready">Connected (localhost:5555)</string>
+    <string name="adb_status_off">Disconnected</string>
+    <string name="permission_not_enabled">Permission not granted</string>
+    <string name="category_general_desc">Basic connection and startup options</string>
+    <string name="category_graphic_desc">Resolution, DPI, FPS limit and orientation</string>
+    <string name="category_audio_desc">Audio sinks, focus, codecs and microphone</string>
+    <string name="category_navigation_desc">GPS source and cluster navigation feed</string>
+    <string name="category_driver_display_desc">Cluster dashboard, HUD and speedometer</string>
+    <string name="category_automation_desc">Autostart, hotspots and intents</string>
+    <string name="category_debug_desc">Logs, ADB link and developer diagnostics</string>
+    <string name="category_info_desc">App version, changelog and licenses</string>
 </resources>
