@@ -54,6 +54,7 @@
     <string name="gles_required_message">Монохромный режим требует рендеринг GLES для применения фильтра оттенков серого к видеовыходу. Включить GLES?</string>
     <string name="enable_gles">Включить GLES</string>
     <string name="category_navigation">Навигация</string>
+    <string name="category_driver_display">Экран водителя (Приборная панель и HUD)</string>
     <string name="category_wireless">Беспроводное соединение</string>
 
     <string name="reconnection_required_title">Требуется переподключение</string>
@@ -377,8 +378,8 @@
     <string name="show_navigation_notifications">Уведомления навигации</string>
     <string name="show_navigation_notifications_description">Показывать «Через X метров Y» и текущую улицу в уведомлениях (для отладки)</string>
     <string name="media_session_aa_status_placeholder">Подключено</string>
-    <string name="sync_media_session_aa_metadata">Текущий трек AA в медиасессии</string>
-    <string name="sync_media_session_aa_metadata_description">Показывать с телефона название, исполнителя, длительность и обложку в системной медиасессии и медиа-уведомлении</string>
+    <string name="sync_media_session_aa_metadata">Текущий трек AA на приборной панели</string>
+    <string name="sync_media_session_aa_metadata_description">Передавать название трека, исполнителя и обложку в медиасессию системы (для отображения на приборной панели и в виджетах)</string>
     <string name="nav_notification_channel_name">Навигация</string>
     <string name="nav_notification_channel_description">Подсказки маршрута от Android Auto</string>
     <string name="nav_notification_title_format">Через %1$d м — %2$s</string>

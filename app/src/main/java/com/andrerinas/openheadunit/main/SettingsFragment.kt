@@ -77,7 +77,9 @@ class SettingsFragment : Fragment() {
         "staticBSSID", "appLanguage", "autoStartSettings", "autoConnectSettings", "resolution",
         "dpiPixelDensity", "viewMode", "fpsLimit", "musicViaBluetooth", "enableAudioSink", "micSettings", "audioVolumeOffsets",
         "keymap", "version", "about", "bydNavigation", "syncMediaSessionAaMetadata",
-        "captureLog", "exportLogs", "clusterMap"
+        "captureLog", "exportLogs", "clusterMap", "clusterTurnCardOverlay", "clusterMapSize", "clusterMapDetail",
+        "clusterMapWidth", "clusterMarkerX", "clusterMarkerY", "clusterTheme", "clusterMapHint", "clusterMapOverlayHint",
+        "clusterMapOverlayGrant", "clusterUsageAccessHint", "clusterUsageAccessGrant", "bydLeftHandTraffic"
     )
 
     // Local state to hold changes before saving
@@ -1224,40 +1226,40 @@ class SettingsFragment : Fragment() {
             ))
         }
 
-        if (com.andrerinas.openheadunit.hud.BydNavigationOutputs.available(requireContext())) {
-            items.add(SettingItem.ToggleSettingEntry(
-                stableId = "bydNavigation",
-                nameResId = R.string.byd_navigation_title,
-                descriptionResId = R.string.byd_navigation_description,
-                isChecked = pendingBydNavigationEnabled ?: false,
-                onCheckedChanged = { enabled ->
-                    pendingBydNavigationEnabled = enabled
-                    checkChanges()
-                    updateSettingsList()
-                }
-            ))
-            if (pendingBydNavigationEnabled == true) {
-                items.add(SettingItem.ToggleSettingEntry(
-                    stableId = "bydLeftHandTraffic",
-                    nameResId = R.string.byd_left_hand_traffic_title,
-                    descriptionResId = R.string.byd_left_hand_traffic_description,
-                    isChecked = pendingBydLeftHandTraffic ?: false,
-                    onCheckedChanged = { enabled ->
-                        pendingBydLeftHandTraffic = enabled
-                        checkChanges()
-                        updateSettingsList()
-                    }
-                ))
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "showNavigationNotifications",
+            nameResId = R.string.show_navigation_notifications,
+            descriptionResId = R.string.show_navigation_notifications_description,
+            isChecked = pendingShowNavigationNotifications!!,
+            onCheckedChanged = { isChecked ->
+                pendingShowNavigationNotifications = isChecked
+                checkChanges()
+                updateSettingsList()
             }
-        }
+        ))
 
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "fakeSpeed",
+            nameResId = R.string.fake_speed_title,
+            descriptionResId = R.string.fake_speed_description,
+            isChecked = pendingFakeSpeed!!,
+            onCheckedChanged = { isChecked ->
+                pendingFakeSpeed = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
-        // Android Auto's own cluster map on the BYD dashboard. Declared to the phone at connection
-        // time, so every change here applies on the next connection.
+        // --- Driver Display (Cluster & HUD) ---
         val dashboardAvailable = com.andrerinas.openheadunit.hud.BydNavigationOutputs.available(requireContext()) ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                com.andrerinas.openheadunit.hud.ClusterMapScreen.findDisplay(requireContext()) != null)
+                com.andrerinas.openheadunit.hud.ClusterMapScreen.findDisplay(requireContext()) != null) ||
+            Settings.isBydPlatform()
+
         if (dashboardAvailable) {
+            items.add(SettingItem.CategoryHeader("driverDisplay", R.string.category_driver_display))
+
+            // 1. Android Auto cluster map video streaming
             items.add(SettingItem.ToggleSettingEntry(
                 stableId = "clusterMap",
                 nameResId = R.string.cluster_map_title,
@@ -1385,31 +1387,48 @@ class SettingsFragment : Fragment() {
                     ))
                 }
             }
+
+            // 2. Turn-by-turn guidance to BYD Cluster & HUD
+            if (com.andrerinas.openheadunit.hud.BydNavigationOutputs.available(requireContext()) || Settings.isBydPlatform()) {
+                items.add(SettingItem.ToggleSettingEntry(
+                    stableId = "bydNavigation",
+                    nameResId = R.string.byd_navigation_title,
+                    descriptionResId = R.string.byd_navigation_description,
+                    isChecked = pendingBydNavigationEnabled ?: false,
+                    onCheckedChanged = { enabled ->
+                        pendingBydNavigationEnabled = enabled
+                        checkChanges()
+                        updateSettingsList()
+                    }
+                ))
+                if (pendingBydNavigationEnabled == true) {
+                    items.add(SettingItem.ToggleSettingEntry(
+                        stableId = "bydLeftHandTraffic",
+                        nameResId = R.string.byd_left_hand_traffic_title,
+                        descriptionResId = R.string.byd_left_hand_traffic_description,
+                        isChecked = pendingBydLeftHandTraffic ?: false,
+                        onCheckedChanged = { enabled ->
+                            pendingBydLeftHandTraffic = enabled
+                            checkChanges()
+                            updateSettingsList()
+                        }
+                    ))
+                }
+            }
+
+            // 3. Media track & artist sync to cluster
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "syncMediaSessionAaMetadata",
+                nameResId = R.string.sync_media_session_aa_metadata,
+                descriptionResId = R.string.sync_media_session_aa_metadata_description,
+                isChecked = pendingSyncMediaSessionAaMetadata!!,
+                onCheckedChanged = { isChecked ->
+                    pendingSyncMediaSessionAaMetadata = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
         }
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "showNavigationNotifications",
-            nameResId = R.string.show_navigation_notifications,
-            descriptionResId = R.string.show_navigation_notifications_description,
-            isChecked = pendingShowNavigationNotifications!!,
-            onCheckedChanged = { isChecked ->
-                pendingShowNavigationNotifications = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
-
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "fakeSpeed",
-            nameResId = R.string.fake_speed_title,
-            descriptionResId = R.string.fake_speed_description,
-            isChecked = pendingFakeSpeed!!,
-            onCheckedChanged = { isChecked ->
-                pendingFakeSpeed = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
 
         // --- Graphic Settings ---
         items.add(SettingItem.CategoryHeader("graphic", R.string.category_graphic))
@@ -1901,17 +1920,19 @@ class SettingsFragment : Fragment() {
             }
         ))
 
-        items.add(SettingItem.ToggleSettingEntry(
-            stableId = "syncMediaSessionAaMetadata",
-            nameResId = R.string.sync_media_session_aa_metadata,
-            descriptionResId = R.string.sync_media_session_aa_metadata_description,
-            isChecked = pendingSyncMediaSessionAaMetadata!!,
-            onCheckedChanged = { isChecked ->
-                pendingSyncMediaSessionAaMetadata = isChecked
-                checkChanges()
-                updateSettingsList()
-            }
-        ))
+        if (!dashboardAvailable) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "syncMediaSessionAaMetadata",
+                nameResId = R.string.sync_media_session_aa_metadata,
+                descriptionResId = R.string.sync_media_session_aa_metadata_description,
+                isChecked = pendingSyncMediaSessionAaMetadata!!,
+                onCheckedChanged = { isChecked ->
+                    pendingSyncMediaSessionAaMetadata = isChecked
+                    checkChanges()
+                    updateSettingsList()
+                }
+            ))
+        }
 
         items.add(SettingItem.SettingEntry(
             stableId = "micSettings",
