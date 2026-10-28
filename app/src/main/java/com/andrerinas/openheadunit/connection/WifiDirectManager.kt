@@ -36,6 +36,15 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
     private companion object {
         private const val MAX_NATIVE_5GHZ_CREATE_RETRIES = 4
+
+        /**
+         * Set when building or submitting the band-restricted group request threw synchronously
+         * with an exception that does not depend on timing (bad argument, unsupported operation,
+         * missing method, refused permission). Such a request fails identically on every retry, so
+         * retrying only adds about eight seconds to each connection. Process-wide, so a restart of
+         * the app tries the band request again.
+         */
+        @Volatile private var bandRequestRejected: String? = null
         private const val MAX_NATIVE_5GHZ_BAND_MISMATCH_RETRIES = 2
         private const val MAX_NATIVE_STANDARD_CREATE_RETRIES = 3
         private const val NATIVE_GROUP_MODE_UNKNOWN = "unknown"
@@ -1217,6 +1226,14 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
 
         AppLog.i("WifiDirectManager: Attempting createGroup for Native AA (Attempt $retryCount)...")
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !force24) {
+            bandRequestRejected?.let { rejected ->
+                AppLog.i("WifiDirectManager: Skipping the $bandLabel band request: this device rejected it earlier in this run ($rejected). Using standard createGroup.")
+                standardCreateGroup(mgr, ch, 0, NATIVE_GROUP_MODE_STANDARD_FALLBACK)
+                return
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
                 // Builder.build() requires networkName+passphrase (or a peer address) or it
@@ -1245,8 +1262,13 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                         else WifiP2pConfig.GROUP_OWNER_BAND_5GHZ
                     )
                 }
+                // Kept in a local rather than read back from the config: WifiP2pConfig.getNetworkName()
+                // only exists from Android 11, and calling it on Android 10 throws NoSuchMethodError
+                // after the builder (Android 10 API) has already succeeded. That made every 5 GHz
+                // request on Android 10 head units fall back to a 2.4 GHz standard group.
+                val networkName = generateP2pNetworkName()
                 val config = builder
-                    .setNetworkName(generateP2pNetworkName())
+                    .setNetworkName(networkName)
                     .setPassphrase(generateP2pPassphrase())
                     .build()
 
@@ -1255,8 +1277,8 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 // does not exist and standardCreateGroup leaves the field UNSPECIFIED.
                 nativeRequestedBand = band
                 AppLog.i("WifiDirectManager: Requesting Native AA P2P group on $bandLabel band.${if (force24) " Forced by debug setting." else ""}")
-                sessionOwnership.expect(requireNotNull(config.networkName))
-                ownershipPrefs.edit().putString("network_name", config.networkName).apply()
+                sessionOwnership.expect(networkName)
+                ownershipPrefs.edit().putString("network_name", networkName).apply()
                 mgr.createGroup(ch, config, object : WifiP2pManager.ActionListener {
                     override fun onSuccess() {
                         if (!sessionOwnership.created(gen)) return
@@ -1286,6 +1308,14 @@ class WifiDirectManager(private val context: Context) : WifiP2pManager.Connectio
                 })
                 return
             } catch (t: Throwable) {
+                val deterministic = t is IllegalArgumentException || t is IllegalStateException ||
+                    t is UnsupportedOperationException || t is SecurityException || t is LinkageError
+                if (deterministic) {
+                    bandRequestRejected = "${t.javaClass.simpleName}: ${t.message}"
+                    AppLog.e("WifiDirectManager: $bandLabel createGroup was rejected before any async result. This kind of failure repeats on every retry, so falling back to standard now and for the rest of this run.", t)
+                    standardCreateGroup(mgr, ch, 0, NATIVE_GROUP_MODE_STANDARD_FALLBACK)
+                    return
+                }
                 if (retryCount < MAX_NATIVE_5GHZ_CREATE_RETRIES) {
                     AppLog.e("WifiDirectManager: $bandLabel createGroup crashed before async result. Retrying $bandLabel.", t)
                     postSessionDelayed({ createQuietGroup(retryCount + 1) }, 2000L)
